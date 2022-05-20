@@ -1,18 +1,7 @@
 defmodule Pistis do
-  @moduledoc """
-  Documentation for `Pistis`.
-  """
+  alias Pistis.Server.RequestHandler
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Pistis.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
+  def put(key, value), do: RequestHandler.process({:put, key, value})
+  def get(key), do: RequestHandler.process({:get, key})
+  def data(), do: RequestHandler.process({:data})
 end
