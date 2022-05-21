@@ -1,3 +1,3 @@
 import Config
 
-config :pistis, some_key: "some_value"
+config :pistis, machine: "MyApp.KVStore"
