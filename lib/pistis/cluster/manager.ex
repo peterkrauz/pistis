@@ -1,40 +1,39 @@
 defmodule Pistis.Cluster.Manager do
-  @node_boot_delay 750
+  @boot_delay 2500
   @raft_cluster_name :pistis
 
   def start_cluster() do
-    cluster_nodes = Range.new(1, 5) |> Enum.map(&start_pod/1)
-    :rpc.multicall(cluster_nodes, :ra, :start, [])
-    raft_nodes = Enum.map(cluster_nodes, fn node -> server_id(node) end)
-    :ra.start_cluster(:default, @raft_cluster_name, machine_spec(), raft_nodes)
+    cluster_nodes = Range.new(1, 5)
+    |> Enum.map(fn pod_index -> Task.async(fn -> boot_pod(pod_index) end) end)
+    |> Enum.map(&Task.await/1)
+
+    :timer.sleep(@boot_delay)
+    :ra.start_cluster(:default, @raft_cluster_name, machine_spec(), cluster_nodes)
   end
 
-  defp machine_spec(), do: {:module, Pistis.Pod.Machine, %{}}
-
-  defp start_pod(_arg) do
-    get_next_pod_name()
-    |> boot_pod()
-    |> beam_connect()
+  def boot_pod(pod_index) do
+    start_pod(pod_index)
+    |> connect_to_pod()
+    |> raft_server_id()
   end
 
-  defp get_next_pod_name() do
-    node_number = Enum.count(Node.list()) + 1
-    "#{@raft_cluster_name}_node_#{node_number}"
-  end
-
-  defp boot_pod(pod_name) do
-    pod_address = "#{pod_name}@localhost"
+  defp start_pod(pod_index) do
+    pod_address = "#{@raft_cluster_name}_node_#{pod_index}@localhost"
     Task.async(fn -> System.shell("iex --sname #{pod_address} -S mix") end)
-    :timer.sleep(@node_boot_delay)
     String.to_atom(pod_address)
   end
 
-  defp server_id(node_address) when is_atom(node_address), do: {@raft_cluster_name, node_address}
-  defp server_id(node_address) when is_binary(node_address), do: {@raft_cluster_name, :"#{node_address}@localhost"}
-
-  defp beam_connect(node_name) when is_binary(node_name), do: beam_connect(:"#{node_name}@localhost")
-  defp beam_connect(node_address) when is_atom(node_address) do
-    Node.connect(node_address)
-    node_address
+  def connect_to_pod(pod_address) do
+    :timer.sleep(@boot_delay)
+    Node.connect(pod_address)
+    :rpc.call(pod_address, Pistis.Pod, :start, [])
+    pod_address
   end
+
+  def members(), do: :ra.members(@raft_cluster_name)
+
+  defp machine_spec(), do: {:module, Pistis.Pod.Machine, %{}}
+
+  defp raft_server_id(node_address) when is_atom(node_address), do: {@raft_cluster_name, node_address}
+  defp raft_server_id(node_address) when is_binary(node_address), do: {@raft_cluster_name, :"#{node_address}@localhost"}
 end
