@@ -1,10 +1,12 @@
 defmodule Pistis.Cluster.Manager do
-  @raft_cluster_name "pistis"
+  @raft_cluster_name :pistis
   @node_boot_delay 750
 
   def start_cluster() do
-    cluster_nodes = Range.new(1, 5) |> Enum.map(&start_pod/1)
-    # :ra.start_cluster(:default, @raft_cluster_name, machine_spec(), [])
+    cluster_nodes = Range.new(1, 2) |> Enum.map(&start_pod/1)
+    raft_nodes = Enum.map(cluster_nodes, fn node -> server_id(node) end)
+    :rpc.multicall(cluster_nodes, :ra, :start, [])
+    :ra.start_cluster(:default, @raft_cluster_name, machine_spec(), raft_nodes)
   end
 
   defp machine_spec(), do: {:module, Pistis.Pod.Machine, %{}}
@@ -22,19 +24,12 @@ defmodule Pistis.Cluster.Manager do
 
   defp boot_pod(pod_name) do
     pod_address = "#{pod_name}@localhost"
-    Task.async(fn ->
-      System.shell("iex --sname #{pod_address} -S mix")
-      :rpc.call(String.to_atom(pod_address), Pistis.Pod.RaftServer, :start, [])
-    end)
+    Task.async(fn -> System.shell("iex --sname #{pod_address} -S mix") end)
     :timer.sleep(@node_boot_delay)
     pod_name
   end
 
   def leader_node(), do: cluster_members() |> Map.get(:leader)
-
-  defp server_nodes(), do: all_nodes() |> Enum.filter(&is_server_node/1)
-  defp all_nodes(), do: [Node.self() | Node.list()]
-  defp is_server_node(node_address), do: Atom.to_string(node_address) |> String.contains?(@raft_cluster_name)
 
   defp add_raft_member(node) do
     :ra.add_member(leader_node(), server_id(node))
