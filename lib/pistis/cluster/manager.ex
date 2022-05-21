@@ -1,11 +1,11 @@
 defmodule Pistis.Cluster.Manager do
-  @raft_cluster_name :pistis
   @node_boot_delay 750
+  @raft_cluster_name :pistis
 
   def start_cluster() do
-    cluster_nodes = Range.new(1, 2) |> Enum.map(&start_pod/1)
-    raft_nodes = Enum.map(cluster_nodes, fn node -> server_id(node) end)
+    cluster_nodes = Range.new(1, 5) |> Enum.map(&start_pod/1)
     :rpc.multicall(cluster_nodes, :ra, :start, [])
+    raft_nodes = Enum.map(cluster_nodes, fn node -> server_id(node) end)
     :ra.start_cluster(:default, @raft_cluster_name, machine_spec(), raft_nodes)
   end
 
@@ -26,30 +26,15 @@ defmodule Pistis.Cluster.Manager do
     pod_address = "#{pod_name}@localhost"
     Task.async(fn -> System.shell("iex --sname #{pod_address} -S mix") end)
     :timer.sleep(@node_boot_delay)
-    pod_name
-  end
-
-  def leader_node(), do: cluster_members() |> Map.get(:leader)
-
-  defp add_raft_member(node) do
-    :ra.add_member(leader_node(), server_id(node))
+    String.to_atom(pod_address)
   end
 
   defp server_id(node_address) when is_atom(node_address), do: {@raft_cluster_name, node_address}
   defp server_id(node_address) when is_binary(node_address), do: {@raft_cluster_name, :"#{node_address}@localhost"}
 
-  defp cluster_members() do
-    case :ra.members({@raft_cluster_name, node()}) do
-      {:ok, server_ids, leader_id} -> %{members: server_ids, leader: leader_id}
-      error_tuple -> error_tuple
-    end
-  end
-
   defp beam_connect(node_name) when is_binary(node_name), do: beam_connect(:"#{node_name}@localhost")
-
   defp beam_connect(node_address) when is_atom(node_address) do
     Node.connect(node_address)
     node_address
   end
-
 end
