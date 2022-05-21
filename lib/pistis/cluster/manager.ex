@@ -3,12 +3,13 @@ defmodule Pistis.Cluster.Manager do
   @node_boot_delay 750
 
   def start_cluster() do
-    :ra.start_cluster(:default, @raft_cluster_name, machine_spec(), [])
+    cluster_nodes = Range.new(1, 5) |> Enum.map(&start_pod/1)
+    # :ra.start_cluster(:default, @raft_cluster_name, machine_spec(), [])
   end
 
   defp machine_spec(), do: {:module, Pistis.Pod.Machine, %{}}
 
-  def start_pod() do
+  defp start_pod(_arg) do
     get_next_pod_name()
     |> boot_pod()
     |> beam_connect()
@@ -20,7 +21,11 @@ defmodule Pistis.Cluster.Manager do
   end
 
   defp boot_pod(pod_name) do
-    Task.async(fn -> System.shell("iex --sname #{pod_name}@localhost -S mix") end)
+    pod_address = "#{pod_name}@localhost"
+    Task.async(fn ->
+      System.shell("iex --sname #{pod_address} -S mix")
+      :rpc.call(String.to_atom(pod_address), Pistis.Pod.RaftServer, :start, [])
+    end)
     :timer.sleep(@node_boot_delay)
     pod_name
   end
@@ -45,6 +50,11 @@ defmodule Pistis.Cluster.Manager do
     end
   end
 
-  defp beam_connect(other_node) when is_atom(other_node), do: Node.connect(other_node)
-  defp beam_connect(other_node) when is_binary(other_node), do: Node.connect(:"#{other_node}@localhost")
+  defp beam_connect(node_name) when is_binary(node_name), do: beam_connect(:"#{node_name}@localhost")
+
+  defp beam_connect(node_address) when is_atom(node_address) do
+    Node.connect(node_address)
+    node_address
+  end
+
 end
