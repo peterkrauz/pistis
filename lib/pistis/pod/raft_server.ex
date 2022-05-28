@@ -6,14 +6,17 @@ defmodule Pistis.Pod.RaftServer do
 
   def start_raft_cluster(nodes) do
     :ra.start_cluster(:default, @raft_cluster_name, machine_spec(), nodes)
-    |> on_cluster_started()
-    |> Pistis.Cluster.StateStorage.set()
+    |> collect_cluster_members()
+    |> Pistis.Cluster.StateStorage.store()
   end
 
-  defp on_cluster_started({:ok, started_servers, _}) do
+  defp collect_cluster_members({:ok, started_servers, failed_servers}) do
     {_, pod_address} = List.first(started_servers)
-    :ra.members({@raft_cluster_name, pod_address})
+    {:ok, members, leader} = :ra.members({@raft_cluster_name, pod_address})
+    {members, failed_servers, leader}
   end
+
+  defp machine_spec(), do: {:module, @machine_module, %{}}
 
   # def dynamic_add({_, pod_address}) do
   #   :ra.add_member(get_leader_node(), raft_server_id(pod_address))
@@ -25,6 +28,4 @@ defmodule Pistis.Pod.RaftServer do
   #     [get_leader_node()]
   #   )
   # end
-
-  defp machine_spec(), do: {:module, @machine_module, %{}}
 end

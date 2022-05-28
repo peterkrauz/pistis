@@ -19,7 +19,7 @@ defmodule Pistis.Cluster.Manager do
   end
 
   def leader_node() do
-    Pistis.Cluster.StateStorage.get() |> Map.get(:leader)
+    Pistis.Cluster.StateStorage.read().leader
   end
 
   def boot_pod(pod_index) do
