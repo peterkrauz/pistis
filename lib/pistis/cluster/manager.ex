@@ -1,16 +1,24 @@
 defmodule Pistis.Cluster.Manager do
   @boot_delay 2500
   @raft_cluster_name :pistis
+  @machine_module Application.fetch_env!(:pistis, :machine)
+  @cluster_size Application.fetch_env!(:pistis, :cluster_size)
 
   def start_cluster() do
-    cluster_nodes = Range.new(1, 5)
+    Pistis.CentralSupervisor.supervise(Pistis.Cluster.StateStorage)
+    nodes = create_cluster_nodes()
+    :timer.sleep(@boot_delay)
+    start_raft_cluster(nodes)
+  end
+
+  defp create_cluster_nodes() do
+    Range.new(1, @cluster_size)
     |> Enum.map(&boot_pod/1)
     |> Enum.map(&Task.await/1)
+  end
 
-    Pistis.CentralSupervisor.supervise(Pistis.Cluster.StateStorage)
-
-    :timer.sleep(@boot_delay)
-    :ra.start_cluster(:default, @raft_cluster_name, machine_spec(), cluster_nodes)
+  defp start_raft_cluster(nodes) do
+    :ra.start_cluster(:default, @raft_cluster_name, machine_spec(), nodes)
     |> on_cluster_started()
     |> Pistis.Cluster.StateStorage.set()
   end
@@ -56,7 +64,7 @@ defmodule Pistis.Cluster.Manager do
     pod_address
   end
 
-  defp machine_spec(), do: {:module, Pistis.Pod.Machine, %{}}
+  defp machine_spec(), do: {:module, @machine_module, %{}}
 
   defp raft_server_id(node_address) when is_atom(node_address), do: {@raft_cluster_name, node_address}
 end
