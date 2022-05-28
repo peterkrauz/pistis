@@ -12,7 +12,10 @@ defmodule Pistis.Cluster.StateStorage do
   end
 
   def get(), do: GenServer.call(@me, {:get})
-  def set(new_state), do: GenServer.call(@me, {:set, new_state})
+
+  def set({:ok, members, leader}) do
+    GenServer.call(@me, {:set, %{members: members, leader: leader}})
+  end
 
   def handle_call({:get}, _, state) do
     {:reply, state, state}

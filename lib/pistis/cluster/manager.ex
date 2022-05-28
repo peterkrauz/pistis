@@ -15,11 +15,9 @@ defmodule Pistis.Cluster.Manager do
     |> Pistis.Cluster.StateStorage.set()
   end
 
-  defp on_cluster_started({:ok, started_servers, failed_nodes}) do
-    IO.puts(
-      "on_cluster_started with #{length(started_servers)} started servers and #{length(failed_nodes)} failed servers."
-    )
-    started_servers
+  defp on_cluster_started({:ok, started_servers, _}) do
+    {_, pod_address} = List.first(started_servers)
+    :ra.members({@raft_cluster_name, pod_address})
   end
 
   # def dynamic_add({_, pod_address}) do
@@ -33,7 +31,7 @@ defmodule Pistis.Cluster.Manager do
   #   )
   # end
 
-  def get_leader_node() do
+  def leader_node() do
     Pistis.Cluster.StateStorage.get() |> Map.get(:leader)
   end
 
