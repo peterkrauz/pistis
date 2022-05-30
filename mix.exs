@@ -31,7 +31,7 @@ defmodule Pistis.MixProject do
   end
 
   defp package_name(), do: "pistis"
-  defp package_description(), do: "A library for easily configurable state-machine replicas"
+  defp package_description(), do: "Transparent, easily-configurable, distributed state-machine replicas."
 
   defp package_info() do
     [
