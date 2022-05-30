@@ -2,7 +2,7 @@ defmodule TestCluster do
   @test_node_suffix for _ <- 1..10, into: "", do: <<Enum.random('0123456789abcdef')>>
 
   def start_slaves(number) do
-    :ok = :net_kernel.monitor_nodes(true)
+    :net_kernel.monitor_nodes(true)
     :os.cmd('epmd -daemon')
     Node.start(:master@localhost, :shortnames)
     Enum.each(1..number, fn(index) ->

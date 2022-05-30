@@ -1,6 +1,6 @@
 defmodule Pistis.Cluster.Manager do
   @boot_delay 2500
-  @cluster_size Application.fetch_env!(:pistis, :cluster_size)
+  @cluster_size Application.get_env(:pistis, :cluster_size, 5)
   @node_suffix for _ <- 1..10, into: "", do: <<Enum.random('0123456789abcdef')>>
 
   alias Pistis.CentralSupervisor

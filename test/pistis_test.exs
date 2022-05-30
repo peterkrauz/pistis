@@ -3,7 +3,7 @@ defmodule PistisTest do
   doctest Pistis
 
   test "basic operations still work" do
-    cluster_size = Application.fetch_env!(:pistis, :cluster_size)
+    cluster_size = Application.get_env(:pistis, :cluster_size, 5)
     TestCluster.start_slaves(cluster_size)
 
     Pistis.Cluster.Manager.start_cluster()
