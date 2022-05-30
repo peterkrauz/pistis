@@ -6,7 +6,7 @@ defmodule TestCluster do
     :os.cmd('epmd -daemon')
     Node.start(:master@localhost, :shortnames)
     Enum.each(1..number, fn(index) ->
-      :slave.start_link(:localhost, 'slave_#{test_node_suffix}_#{index}')
+      :slave.start_link(:localhost, 'slave_#{@test_node_suffix}_#{index}')
     end)
     [node() | Node.list()]
   end

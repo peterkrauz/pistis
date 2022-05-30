@@ -1,4 +1,4 @@
-defmodule Pistis.MainSupervisor do
+defmodule Pistis.DynamicSupervisor do
   use DynamicSupervisor
 
   @me __MODULE__
