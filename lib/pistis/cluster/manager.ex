@@ -1,6 +1,7 @@
 defmodule Pistis.Cluster.Manager do
   @boot_delay 2500
   @cluster_size Application.fetch_env!(:pistis, :cluster_size)
+  @node_suffix for _ <- 1..10, into: "", do: <<Enum.random('0123456789abcdef')>>
 
   alias Pistis.CentralSupervisor
   alias Pistis.Pod.RaftServer, as: Raft
@@ -19,19 +20,22 @@ defmodule Pistis.Cluster.Manager do
   end
 
   def leader_node() do
-    Pistis.Cluster.StateStorage.read().leader
+    case Pistis.Cluster.StateStorage.read() do
+      %Pistis.Cluster.State{leader: leader, members: _, failures: _} -> leader
+      _ -> :error
+    end
   end
 
   def boot_pod(pod_index) do
     Task.async(fn ->
       start_pod(pod_index)
       |> connect_to_pod()
-      |> raft_server_id()
+      |> Raft.to_server_id()
     end)
   end
 
   defp start_pod(pod_index) do
-    pod_address = "#{Raft.cluster_name()}_node_#{pod_index}@localhost"
+    pod_address = "#{Raft.cluster_name()}_node_#{@node_suffix}_#{pod_index}@localhost"
     Task.async(fn -> System.shell("iex --sname #{pod_address} -S mix") end)
     String.to_atom(pod_address)
   end
@@ -42,6 +46,4 @@ defmodule Pistis.Cluster.Manager do
     :rpc.call(pod_address, Pistis.Pod, :start, [])
     pod_address
   end
-
-  defp raft_server_id(node_address), do: {Raft.cluster_name(), node_address}
 end

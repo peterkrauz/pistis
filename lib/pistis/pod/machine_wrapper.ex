@@ -6,8 +6,6 @@ defmodule Pistis.Pod.MachineWrapper do
   @machine_module Application.fetch_env!(:pistis, :machine)
   @side_effects []
 
-  @spec init(any) :: map()
-  @spec apply(any, {:data} | {:get, any} | {:put, any, any}, map) :: {map, any, []}
   @spec machine_spec :: {:module, Pistis.Pod.MachineWrapper, %{}}
 
   @impl :ra_machine

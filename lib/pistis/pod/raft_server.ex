@@ -20,6 +20,8 @@ defmodule Pistis.Pod.RaftServer do
     {members, failed_servers, leader}
   end
 
+  def to_server_id(node_address), do: {cluster_name(), node_address}
+
   # def dynamic_add({_, pod_address}) do
   #   :ra.add_member(get_leader_node(), raft_server_id(pod_address))
   #   :ra.start_server(
