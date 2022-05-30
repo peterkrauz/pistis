@@ -1,4 +1,4 @@
 import Config
 
-config :pistis, machine: Pistis.Pod.Machine
+config :pistis, machine: Example.KVStore
 config :pistis, cluster_size: 5
