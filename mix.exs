@@ -7,7 +7,11 @@ defmodule Pistis.MixProject do
       version: "0.1.0",
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      name: package_name(),
+      package: package_info(),
+      source_url: package_source_url(),
+      description: package_description(),
     ]
   end
 
@@ -22,6 +26,20 @@ defmodule Pistis.MixProject do
   defp deps do
     [
       {:ra, "~> 2.0"},
+      {:ex_doc, "~> 0.14", only: :dev, runtime: false},
     ]
   end
+
+  defp package_name(), do: "pistis"
+  defp package_description(), do: "A library for easily configurable state-machine replicas"
+
+  defp package_info() do
+    [
+      name: "pistis",
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => package_source_url()}
+    ]
+  end
+
+  defp package_source_url(), do: "https://github.com/peterkrauz/pistis"
 end
