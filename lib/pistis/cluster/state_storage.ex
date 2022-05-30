@@ -4,7 +4,7 @@ defmodule Pistis.Cluster.StateStorage do
 
   @me __MODULE__
 
-  def start_link(_args), do: GenServer.start_link(@me, ClusterState.empty(), name: @me)
+  def start_link(_args), do: GenServer.start_link(@me, %{}, name: @me)
 
   def init(state), do: {:ok, state}
 

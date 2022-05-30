@@ -3,11 +3,8 @@ defmodule Pistis.Cluster.State do
 
   @type raft_member :: tuple()
   @type t :: %__MODULE__{
-    leader: raft_member() | nil,
-    members: list(raft_member()) | nil,
-    failures: list(raft_member()) | nil,
+    leader: raft_member(),
+    members: list(raft_member()),
+    failures: list(raft_member()),
   }
-
-  @spec empty :: Pistis.Cluster.State.t()
-  def empty(), do: %__MODULE__{}
 end
