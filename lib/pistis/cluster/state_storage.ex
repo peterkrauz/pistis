@@ -12,7 +12,7 @@ defmodule Pistis.Cluster.StateStorage do
 
   def store({all_members, failures, leader}) do
     members = Enum.filter(all_members, fn m -> m not in failures end)
-    GenServer.call(@me, {:store, %ClusterState{members: members, leader: leader, failures: failures}})
+    GenServer.call(@me, {:store, %ClusterState{members: members, failures: failures, leader: leader}})
   end
 
   def handle_call({:read}, _, state), do: {:reply, state, state}

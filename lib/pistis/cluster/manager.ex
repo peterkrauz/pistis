@@ -3,11 +3,11 @@ defmodule Pistis.Cluster.Manager do
   @cluster_size Application.get_env(:pistis, :cluster_size, 5)
   @node_suffix for _ <- 1..10, into: "", do: <<Enum.random('0123456789abcdef')>>
 
-  alias Pistis.CentralSupervisor
+  alias Pistis.MainSupervisor
   alias Pistis.Pod.RaftServer, as: Raft
 
   def start_cluster() do
-    CentralSupervisor.supervise(Pistis.Cluster.StateStorage)
+    MainSupervisor.supervise(Pistis.Cluster.StateStorage)
     nodes = create_cluster_nodes()
     :timer.sleep(@boot_delay)
     Raft.start_raft_cluster(nodes)

@@ -6,7 +6,7 @@ defmodule Pistis.Application do
 
   @impl Application
   def start(_type, _args) do
-    children = [Pistis.CentralSupervisor]
+    children = [Pistis.MainSupervisor]
     opts = [strategy: :one_for_one, name: Pistis.Supervisor]
     Supervisor.start_link(children, opts)
   end
