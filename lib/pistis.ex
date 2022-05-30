@@ -6,8 +6,6 @@ defmodule Pistis do
   def data(), do: RequestHandler.process({:data})
 
   def push(item), do: RequestHandler.process({:push, item})
-
   def pop(), do: RequestHandler.process({:pop})
-
   def peek(), do: RequestHandler.process({:peek})
 end

@@ -13,8 +13,8 @@ defmodule Pistis.Pod.MachineWrapper do
 
   @impl :ra_machine
   def apply(_command_metadata, command, state) do
-    {response, state} = @machine_module.process_command(command, state)
-    {state, response, @side_effects}
+    result = @machine_module.process_command(command, state)
+    {result.state, result.response, @side_effects}
   end
 
   def machine_spec(), do: {:module, @me, @machine_config}

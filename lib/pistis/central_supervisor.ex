@@ -16,13 +16,11 @@ defmodule Pistis.CentralSupervisor do
   @spec supervise(atom) :: any
 
   def start_link(init_arg \\ []) do
-    IO.puts("CentralSupervisor: start_link")
     DynamicSupervisor.start_link(@me, init_arg, name: @me)
   end
 
   @impl DynamicSupervisor
   def init(_init_arg) do
-    IO.puts("CentralSupervisor: init")
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
