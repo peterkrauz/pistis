@@ -1,6 +1,6 @@
 defmodule Pistis.Cluster.Manager do
-  @boot_delay 2500
   @cluster_size Application.get_env(:pistis, :cluster_size, 5)
+  @cluster_boot_delay Application.get_env(:pistis, :cluster_boot_delay, 3500)
   @node_suffix for _ <- 1..10, into: "", do: <<Enum.random('abcde12345')>>
 
   alias Pistis.DynamicSupervisor
@@ -9,7 +9,7 @@ defmodule Pistis.Cluster.Manager do
   def start_cluster() do
     DynamicSupervisor.supervise(Pistis.Cluster.StateStorage)
     nodes = create_cluster_nodes()
-    :timer.sleep(@boot_delay)
+    :timer.sleep(@cluster_boot_delay)
     Raft.start_raft_cluster(nodes)
   end
 
@@ -41,7 +41,7 @@ defmodule Pistis.Cluster.Manager do
   end
 
   def connect_to_pod(pod_address) do
-    :timer.sleep(@boot_delay)
+    :timer.sleep(@cluster_boot_delay)
     Node.connect(pod_address)
     :rpc.call(pod_address, Pistis.Pod, :start, [])
     pod_address
