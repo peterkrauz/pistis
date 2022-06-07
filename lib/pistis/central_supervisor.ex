@@ -7,7 +7,7 @@ defmodule Pistis.CentralSupervisor do
 
   @impl true
   def init(_init_arg) do
-    children = [Pistis.Loader, Pistis.DynamicSupervisor]
+    children = [Pistis.Cluster.Loader, Pistis.DynamicSupervisor]
     Supervisor.init(children, strategy: :one_for_one)
   end
 end

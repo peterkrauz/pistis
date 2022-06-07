@@ -13,6 +13,7 @@ defmodule Pistis.Cluster.Loader do
 
   def handle_info(:load_cluster, state) do
     Pistis.Cluster.Manager.start_cluster()
+    Pistis.Cluster.ConnectionRetry.start_link()
     self_send(:stop)
     {:noreply, state}
   end

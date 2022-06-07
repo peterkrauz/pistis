@@ -20,9 +20,7 @@ defmodule Pistis.DynamicSupervisor do
   end
 
   @impl DynamicSupervisor
-  def init(_init_arg) do
-    DynamicSupervisor.init(strategy: :one_for_one)
-  end
+  def init(_init_arg), do: DynamicSupervisor.init(strategy: :one_for_one)
 
   def supervise(process_module) do
     case start_child(process_module) do
@@ -31,7 +29,5 @@ defmodule Pistis.DynamicSupervisor do
     end
   end
 
-  defp start_child(process_module) do
-    DynamicSupervisor.start_child(@me, {process_module, []})
-  end
+  defp start_child(process_module), do: DynamicSupervisor.start_child(@me, {process_module, []})
 end
