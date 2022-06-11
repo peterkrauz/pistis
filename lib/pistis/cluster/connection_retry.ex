@@ -3,7 +3,7 @@ defmodule Pistis.Cluster.ConnectionRetry do
   alias Pistis.Cluster.State, as: ClusterState
 
   @me __MODULE__
-  @heartbeat 2500
+  @heartbeat 1500
 
   def start_link(), do: GenServer.start_link(@me, %{})
 
