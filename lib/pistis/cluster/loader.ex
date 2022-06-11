@@ -6,6 +6,8 @@ defmodule Pistis.Cluster.Loader do
   @delay 2500
 
   @spec start_link(any) :: :ignore | {:error, any} | {:ok, pid}
+  @spec init(any) :: {:ok, any}
+
   def start_link(args \\ []), do: GenServer.start_link(@me, args, name: @me)
 
   def init(state) do
