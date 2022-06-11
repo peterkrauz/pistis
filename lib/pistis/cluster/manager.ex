@@ -25,6 +25,15 @@ defmodule Pistis.Cluster.Manager do
     end
   end
 
+  def any_node() do
+    case Pistis.Cluster.StateStorage.read() do
+      %Pistis.Cluster.State{leader: _, members: members, failures: _} ->
+        index = :rand.uniform(length(members)) - 1
+        Enum.at(members, index)
+      _ -> :error
+    end
+  end
+
   def boot_pod(pod_index) do
     Task.async(fn ->
       start_pod(pod_index)
