@@ -6,7 +6,7 @@ defmodule PistisTest do
     cluster_size = Application.get_env(:pistis, :cluster_size, 5)
     TestCluster.start_slaves(cluster_size)
 
-    Pistis.Cluster.Manager.start_cluster()
+    Pistis.Cluster.Manager.boot()
 
     CLI.put(:a, 3)
     CLI.put(:b, 2)
