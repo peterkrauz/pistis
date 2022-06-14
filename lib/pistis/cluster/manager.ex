@@ -4,20 +4,33 @@ defmodule Pistis.Cluster.Manager do
   alias Pistis.Pod.Raft
 
   @cluster_size Application.get_env(:pistis, :cluster_size, 5)
+  @node_suffix for _ <- 1..10, into: "", do: <<Enum.random('abc123')>>
+  @native_cluster Application.get_env(:pistis, :native_cluster, false) # TODO: Tweak this when testing
 
   def boot() do
     Pistis.DynamicSupervisor.supervise(Pistis.Cluster.StateStorage)
 
-    pod_cluster = create_pod_cluster()
-    :timer.sleep(Pod.boot_delay())
+    cluster = case @native_cluster do
+      true -> create_cluster()
+      false -> connect_to_cluster()
+    end
 
-    Raft.start_raft_cluster(pod_cluster)
+    :timer.sleep(Pod.boot_delay())
+    cluster
+    |> Raft.start_raft_cluster()
     |> StateStorage.store()
   end
 
-  defp create_pod_cluster() do
+  defp create_cluster() do
     Range.new(1, @cluster_size)
-    |> Enum.map(&Pod.boot_pod/1)
+    |> Enum.map(&Pod.create_pod/1)
+    |> Enum.map(&Task.await/1)
+  end
+
+  defp connect_to_cluster() do
+    # TODO: Connect to Erlang nodes with :pistis_node_<number> where number in [0 .. @cluster_size]
+    Range.new(1, @cluster_size)
+    |> Enum.map(&Pod.connect_to_pod/1)
     |> Enum.map(&Task.await/1)
   end
 
@@ -48,5 +61,11 @@ defmodule Pistis.Cluster.Manager do
     new_members = Map.get(StateStorage.read(), :members) ++ solved_failures
     StateStorage.store(members: new_members)
     StateStorage.store(failures: unsolved_failures)
+  end
+
+  def create_node(pod_index) do
+    pod_address = "#{Raft.cluster_name()}_node_#{@node_suffix}_#{pod_index}@localhost"
+    Task.async(fn -> System.shell("iex --sname #{pod_address} -S mix") end) # TODO: Find other way to boot stuff
+    String.to_atom(pod_address)
   end
 end

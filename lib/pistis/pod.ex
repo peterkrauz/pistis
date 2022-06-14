@@ -1,7 +1,7 @@
 defmodule Pistis.Pod do
   alias Pistis.Pod.Raft
+  alias Pistis.Cluster.Manager
 
-  @node_suffix for _ <- 1..10, into: "", do: <<Enum.random('abc123')>>
   @cluster_boot_delay max(Application.get_env(:pistis, :cluster_boot_delay, 3500), 3500)
 
   def start() do
@@ -12,24 +12,19 @@ defmodule Pistis.Pod do
 
   def boot_delay(), do: @cluster_boot_delay
 
-  def boot_pod(pod_index) do
-    Task.async(fn ->
-      start_pod(pod_index)
-      |> connect_to_pod()
-      |> Raft.to_server_id()
-    end)
+  def create_pod(pod_index) do
+    Task.async(fn -> pod_index|> Manager.create_node() |> erlang_connect() end)
   end
 
-  defp start_pod(pod_index) do
-    pod_address = "#{Raft.cluster_name()}_node_#{@node_suffix}_#{pod_index}@localhost"
-    Task.async(fn -> System.shell("iex --sname #{pod_address} -S mix") end) # TODO: This line needs to change
-    String.to_atom(pod_address)
+  def connect_to_pod(pod_index) do
+    node_address = String.to_atom("pistis_node_#{pod_index}")
+    erlang_connect(node_address)
   end
 
-  defp connect_to_pod(pod_address) do
+  defp erlang_connect(pod_address) do
     :timer.sleep(boot_delay())
     Node.connect(pod_address)
     :rpc.call(pod_address, Pistis.Pod, :start, [])
-    pod_address
+    Raft.to_server_id(pod_address)
   end
 end
