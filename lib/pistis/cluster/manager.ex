@@ -1,20 +1,23 @@
 defmodule Pistis.Cluster.Manager do
-  alias Pistis.Pod.RaftServer, as: Raft
+  alias Pistis.Cluster.StateStorage
+  alias Pistis.Pod
+  alias Pistis.Pod.Raft
 
   @cluster_size Application.get_env(:pistis, :cluster_size, 5)
-  @node_suffix for _ <- 1..10, into: "", do: <<Enum.random('abc123')>>
-  @cluster_boot_delay max(Application.get_env(:pistis, :cluster_boot_delay, 3500), 3500)
 
   def boot() do
     Pistis.DynamicSupervisor.supervise(Pistis.Cluster.StateStorage)
-    nodes = create_cluster_nodes()
-    :timer.sleep(@cluster_boot_delay)
-    Raft.start_raft_cluster(nodes)
+
+    pod_cluster = create_pod_cluster()
+    :timer.sleep(Pod.boot_delay())
+
+    Raft.start_raft_cluster(pod_cluster)
+    |> StateStorage.store()
   end
 
-  defp create_cluster_nodes() do
+  defp create_pod_cluster() do
     Range.new(1, @cluster_size)
-    |> Enum.map(&boot_pod/1)
+    |> Enum.map(&Pod.boot_pod/1)
     |> Enum.map(&Task.await/1)
   end
 
@@ -34,24 +37,16 @@ defmodule Pistis.Cluster.Manager do
     end
   end
 
-  def boot_pod(pod_index) do
-    Task.async(fn ->
-      start_pod(pod_index)
-      |> connect_to_pod()
-      |> Raft.to_server_id()
-    end)
-  end
+  def refresh_cluster_state() do
+    {_, n} = leader_node()
+    {:ok, refreshed_members, _} = Raft.cluster_members(n)
 
-  defp start_pod(pod_index) do
-    pod_address = "#{Raft.cluster_name()}_node_#{@node_suffix}_#{pod_index}@localhost"
-    Task.async(fn -> System.shell("iex --sname #{pod_address} -S mix") end) # TODO: This line needs to change
-    String.to_atom(pod_address)
-  end
+    catalogued_failures = StateStorage.read().failures
+    solved_failures = Enum.filter(catalogued_failures, fn f_node -> f_node in refreshed_members end)
+    unsolved_failures = Enum.filter(catalogued_failures, fn f_node -> f_node not in refreshed_members end)
 
-  def connect_to_pod(pod_address) do
-    :timer.sleep(@cluster_boot_delay)
-    Node.connect(pod_address)
-    :rpc.call(pod_address, Pistis.Pod, :start, [])
-    pod_address
+    new_members = Map.get(StateStorage.read(), :members) ++ solved_failures
+    StateStorage.store(members: new_members)
+    StateStorage.store(failures: unsolved_failures)
   end
 end

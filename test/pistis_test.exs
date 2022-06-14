@@ -1,8 +1,7 @@
 defmodule PistisTest do
   use ExUnit.Case
-  doctest Pistis
 
-  test "basic operations kv store operations work" do
+  test "basic kv store operations work" do
     cluster_size = Application.get_env(:pistis, :cluster_size, 5)
     TestCluster.start_slaves(cluster_size)
 

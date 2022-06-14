@@ -1,7 +1,6 @@
-defmodule Pistis.Pod.RaftServer do
-  alias Pistis.Pod.MachineWrapper
+defmodule Pistis.Pod.Raft do
   alias Pistis.Cluster.Manager
-  alias Pistis.Cluster.StateStorage
+  alias Pistis.Pod.MachineWrapper
 
   @raft_cluster_name :pistis
 
@@ -12,18 +11,17 @@ defmodule Pistis.Pod.RaftServer do
 
   def start_raft_cluster(nodes) do
     :ra.start_cluster(:default, cluster_name(), MachineWrapper.machine_spec(), nodes)
-    |> collect_cluster_members()
-    |> Pistis.Cluster.StateStorage.store()
+    |> collect_raft_members()
   end
 
   def cluster_members() do
-    {@raft_cluster_name, pod_address} = Map.get(Pistis.Cluster.StateStorage.read(), :leader)
+    {@raft_cluster_name, pod_address} = Manager.leader_node()
     :ra.members({cluster_name(), pod_address})
   end
 
   def cluster_members(pod_address), do: :ra.members({cluster_name(), pod_address})
 
-  defp collect_cluster_members({:ok, started_servers, failed_servers}) do
+  defp collect_raft_members({:ok, started_servers, failed_servers}) do
     {_, pod_address} = List.first(started_servers)
     {_, members, leader} = cluster_members(pod_address)
     {members, failed_servers, leader}
@@ -40,19 +38,6 @@ defmodule Pistis.Pod.RaftServer do
       MachineWrapper.machine_spec(),
       [Manager.leader_node()]
     )
-    refresh_cluster_state()
-  end
-
-  defp refresh_cluster_state() do
-    {_, n} = Manager.leader_node()
-    {:ok, refreshed_members, _} = cluster_members(n)
-
-    catalogued_failures = StateStorage.read() |> Map.get(:failures)
-    solved_failures = Enum.filter(catalogued_failures, fn f_node -> f_node in refreshed_members end)
-    unsolved_failures = Enum.filter(catalogued_failures, fn f_node -> f_node not in refreshed_members end)
-
-    new_members = Map.get(StateStorage.read(), :members) ++ solved_failures
-    StateStorage.store(members: new_members)
-    StateStorage.store(failures: unsolved_failures)
+    Manager.refresh_cluster_state()
   end
 end

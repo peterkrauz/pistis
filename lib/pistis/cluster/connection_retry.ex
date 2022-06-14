@@ -27,7 +27,7 @@ defmodule Pistis.Cluster.ConnectionRetry do
 
   defp attempt_reconnection(%ClusterState{leader: _, failures: failures, members: _}) do
     # log("attempt_reconnection/1 <> #{length(failures)} failures")
-    Enum.each(failures, fn failed_node -> Pistis.Pod.RaftServer.dynamic_add(failed_node) end)
+    Enum.each(failures, fn failed_node -> Pistis.Pod.Raft.dynamic_add(failed_node) end)
     schedule_work(@heartbeat)
   end
 
