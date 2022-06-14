@@ -1,6 +1,6 @@
 defmodule Example.KVStore do
-  alias Pistis.Request
-  alias Pistis.Response
+  alias Pistis.Machine.Request
+  alias Pistis.Machine.Response
   @behaviour Pistis.Machine
 
   @spec initial_state :: %{}

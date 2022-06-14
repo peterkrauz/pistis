@@ -1,3 +1,0 @@
-defmodule Pistis do
-
-end

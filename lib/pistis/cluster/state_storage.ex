@@ -16,19 +16,16 @@ defmodule Pistis.Cluster.StateStorage do
     store_state(new_state)
   end
 
+  def store(leader: leader) do
+    Map.put(read(), :leader, leader) |> store_state()
+  end
+
   def store(members: members) do
-    new_state = Map.put(read(), :members, members)
-    store_state(new_state)
+    Map.put(read(), :members, members) |> store_state()
   end
 
   def store(failures: failures) do
-    new_state = Map.put(read(), :failures, failures)
-    store_state(new_state)
-  end
-
-  def store(leader: leader) do
-    new_state = Map.put(read(), :leader, leader)
-    store_state(new_state)
+    Map.put(read(), :failures, failures) |> store_state()
   end
 
   defp store_state(new_state), do: GenServer.call(@me, {:store, new_state})

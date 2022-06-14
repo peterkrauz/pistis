@@ -44,7 +44,7 @@ defmodule Pistis.Cluster.Manager do
 
   defp start_pod(pod_index) do
     pod_address = "#{Raft.cluster_name()}_node_#{@node_suffix}_#{pod_index}@localhost"
-    Task.async(fn -> System.shell("iex --sname #{pod_address} -S mix") end)
+    Task.async(fn -> System.shell("iex --sname #{pod_address} -S mix") end) # TODO: This line needs to change
     String.to_atom(pod_address)
   end
 
