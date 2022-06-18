@@ -9,6 +9,10 @@ defmodule Pistis.Pod.Raft do
 
   def cluster_name, do: @raft_cluster_name
 
+  def start_raft_cluster([]) do
+    raise RuntimeError, message: "No pistis cluster found -- did you forget to configure your network cluster?"
+  end
+
   def start_raft_cluster(nodes) do
     :ra.start_cluster(:default, cluster_name(), MachineWrapper.machine_spec(), nodes)
     |> collect_raft_members()

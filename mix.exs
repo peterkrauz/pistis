@@ -26,6 +26,7 @@ defmodule Pistis.MixProject do
   defp deps do
     [
       {:ra, "~> 2.0"},
+      {:libcluster, "~> 3.3"},
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
     ]
   end

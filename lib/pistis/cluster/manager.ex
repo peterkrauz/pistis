@@ -5,20 +5,24 @@ defmodule Pistis.Cluster.Manager do
 
   @cluster_size Application.get_env(:pistis, :cluster_size, 5)
   @node_suffix for _ <- 1..10, into: "", do: <<Enum.random('abc123')>>
-  @native_cluster Application.get_env(:pistis, :native_cluster, false) # TODO: Tweak this when testing
+  @native_cluster Application.get_env(:pistis, :native_cluster, false)
 
   def boot() do
     Pistis.DynamicSupervisor.supervise(Pistis.Cluster.StateStorage)
 
-    cluster = case @native_cluster do
-      true -> create_cluster()
-      false -> connect_to_cluster()
-    end
-
+    cluster = get_or_create_cluster()
     :timer.sleep(Pod.boot_delay())
+
     cluster
     |> Raft.start_raft_cluster()
     |> StateStorage.store()
+  end
+
+  defp get_or_create_cluster() do
+    case @native_cluster do
+      true -> create_cluster()
+      false -> connect_to_cluster()
+    end
   end
 
   defp create_cluster() do
@@ -28,10 +32,8 @@ defmodule Pistis.Cluster.Manager do
   end
 
   defp connect_to_cluster() do
-    # TODO: Connect to Erlang nodes with :pistis_node_<number> where number in [0 .. @cluster_size]
-    Range.new(1, @cluster_size)
-    |> Enum.map(&Pod.connect_to_pod/1)
-    |> Enum.map(&Task.await/1)
+    pistis_nodes()
+    |> Enum.map(&Pod.boot_raft/1)
   end
 
   def leader_node() do
@@ -48,6 +50,16 @@ defmodule Pistis.Cluster.Manager do
         Enum.at(members, index)
       _ -> :error
     end
+  end
+
+  def erlang_nodes, do: [Node.self() | Node.list()]
+
+  def pistis_nodes do
+    erlang_nodes() |> Enum.filter(&is_pistis_replica/1)
+  end
+
+  def is_pistis_replica(node) do
+    Atom.to_string(node) |> String.contains?("pistis")
   end
 
   def refresh_cluster_state() do
