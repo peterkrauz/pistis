@@ -4,8 +4,8 @@ defmodule Pistis.Cluster.Manager do
   alias Pistis.Pod.Raft
   use Pistis.Core.Journal
 
+  @known_hosts Application.get_env(:pistis, :known_hosts, [])
   @cluster_size max(Application.get_env(:pistis, :cluster_size, 5), 3)
-  @native_cluster Application.get_env(:pistis, :native_cluster, false)
   @cluster_boot_delay max(Application.get_env(:pistis, :cluster_boot_delay, 4000), 4000)
 
   def boot() do
@@ -20,9 +20,9 @@ defmodule Pistis.Cluster.Manager do
   end
 
   defp get_or_create_cluster() do
-    case @native_cluster do
-      true -> create_cluster()
-      false -> connect_to_cluster()
+    case @known_hosts do
+      [] -> create_cluster()
+      _ -> connect_to_cluster()
     end
   end
 
