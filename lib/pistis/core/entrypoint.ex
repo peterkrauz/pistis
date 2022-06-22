@@ -1,6 +1,5 @@
-defmodule Pistis.Cluster.Loader do
+defmodule Pistis.Core.Entrypoint do
   use GenServer
-  use Pistis.EnhancedLogger
 
   @me __MODULE__
   @delay 2500

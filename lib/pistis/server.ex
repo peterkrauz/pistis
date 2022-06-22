@@ -1,7 +1,6 @@
 defmodule Pistis.Server do
   alias Pistis.Cluster.Manager
-  alias Pistis.Machine.Request
-  alias Pistis.Machine.Response
+  alias Pistis.Machine.{Request, Response}
 
   @spec send_request(any) :: Response | tuple()
 

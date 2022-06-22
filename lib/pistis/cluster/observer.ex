@@ -1,6 +1,6 @@
 defmodule Pistis.Cluster.Observer do
   use GenServer
-  use Pistis.EnhancedLogger
+  use Pistis.Core.Journal
 
   @me __MODULE__
 
@@ -14,12 +14,12 @@ defmodule Pistis.Cluster.Observer do
 
   @impl GenServer
   def handle_info({:nodedown, node}, state) do
-    log("--- Node down: #{node}")
+    scribe("--- Node down: #{node}")
     {:noreply, state}
   end
 
   def handle_info({:nodeup, node}, state) do
-    log("--- Node up: #{node}")
+    scribe("--- Node up: #{node}")
     {:noreply, state}
   end
 end

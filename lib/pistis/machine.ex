@@ -1,6 +1,5 @@
 defmodule Pistis.Machine do
-  alias Pistis.Machine.Request
-  alias Pistis.Machine.Response
+  alias Pistis.Machine.{Request, Response}
 
   @type machine_state :: any()
   @callback initial_state() :: machine_state()

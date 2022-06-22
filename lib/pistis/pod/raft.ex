@@ -1,6 +1,7 @@
 defmodule Pistis.Pod.Raft do
   alias Pistis.Cluster.Manager
   alias Pistis.Pod.MachineWrapper
+  use Pistis.Core.Journal
 
   @raft_cluster_name :pistis
 
@@ -14,13 +15,15 @@ defmodule Pistis.Pod.Raft do
   end
 
   def start_raft_cluster(nodes) do
+    scribe("Starting Raft cluster with #{length(nodes)} members:")
+    Enum.each(nodes, fn n -> IO.puts("\t#{n}") end)
     :ra.start_cluster(:default, cluster_name(), MachineWrapper.machine_spec(), nodes)
     |> collect_raft_members()
   end
 
   def cluster_members() do
     {@raft_cluster_name, pod_address} = Manager.leader_node()
-    :ra.members({cluster_name(), pod_address})
+    cluster_members(pod_address)
   end
 
   def cluster_members(pod_address), do: :ra.members({cluster_name(), pod_address})

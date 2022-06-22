@@ -1,6 +1,6 @@
 defmodule Pistis.Cluster.StateStorage do
   use GenServer
-  alias Pistis.Cluster.State, as: ClusterState
+  alias Pistis.Cluster.State
 
   @me __MODULE__
 
@@ -12,7 +12,7 @@ defmodule Pistis.Cluster.StateStorage do
 
   def store({all_members, failures, leader}) do
     members = Enum.filter(all_members, fn m -> m not in failures end)
-    new_state = %ClusterState{members: members, failures: failures, leader: leader}
+    new_state = %State{members: members, failures: failures, leader: leader}
     store_state(new_state)
   end
 

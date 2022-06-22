@@ -1,30 +1,27 @@
 defmodule Pistis.Pod do
   alias Pistis.Pod.Raft
   alias Pistis.Cluster.Manager
-
-  @cluster_boot_delay max(Application.get_env(:pistis, :cluster_boot_delay, 3500), 3500)
+  use Pistis.Core.Journal
 
   def start(), do: :ra.start()
 
-  def boot_delay(), do: @cluster_boot_delay
-
   def create_pod(pod_index) do
-    Task.async(fn ->
-      pod_index
-      |> Manager.create_node()
-      |> erlang_connect()
-      |> boot_raft()
-    end)
+    Task.async(fn -> boot_pod(pod_index) end)
   end
 
-  defp erlang_connect(pod_address) do
-    :timer.sleep(boot_delay())
-    Node.connect(pod_address)
+  defp boot_pod(pod_index) do
+    scribe("Booting pod number #{pod_index}")
+    pod_address = Manager.create_node(pod_index)
+    Manager.wait()
+
     pod_address
+    |> Manager.erlang_connect()
+    |> boot_raft()
   end
 
   def boot_raft(pod_address) do
     :rpc.call(pod_address, Pistis.Pod, :start, [])
+    scribe("Booting raft on #{Raft.to_server_id(pod_address)}")
     Raft.to_server_id(pod_address)
   end
 end

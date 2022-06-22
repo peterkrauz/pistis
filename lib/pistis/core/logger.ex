@@ -1,4 +1,4 @@
-defmodule Pistis.EnhancedLogger do
+defmodule Pistis.Core.Journal do
 
   @spec __using__(any) :: {:__block__, [], [{:def, [...], [...]} | {:import, [...], [...]}, ...]}
 
@@ -6,7 +6,7 @@ defmodule Pistis.EnhancedLogger do
     quote do
       import IO.ANSI
 
-      def log(msg) do
+      def scribe(msg) do
         node_name = "[#{cyan()}#{Node.self}#{reset()}]"
         module_name = " ~> #{yellow()}#{Kernel.inspect self()}#{reset()}"
         pids = "#{bright()}#{magenta()}#{pretty_name()}#{reset()}"

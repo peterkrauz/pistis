@@ -1,5 +1,4 @@
 defmodule Pistis.Application do
-  @moduledoc false
   use Application
 
   @spec start(any, any) :: {:error, any} | {:ok, pid}
@@ -7,20 +6,39 @@ defmodule Pistis.Application do
 
   @impl Application
   def start(_type, _args) do
+    children = app_children(native_cluster: @native_cluster)
     opts = [strategy: :one_for_one, name: Pistis.Supervisor]
-    Supervisor.start_link(get_app_children(), opts)
+    Supervisor.start_link(children, opts)
   end
 
-  def get_app_children() do
-    case @native_cluster do
-      true -> [Pistis.DynamicSupervisor]
-      false -> [Pistis.DynamicSupervisor, Pistis.Cluster.Observer, {Cluster.Supervisor, [topologies(), [name: Pistis.ClusterSupervisor]]}]
-    end
+  defp app_children(native_cluster: false) do
+    libcluster_supervisor = {Cluster.Supervisor, [topologies(), [name: Pistis.ClusterSupervisor]]}
+    [libcluster_supervisor | base_children()]
   end
+
+  defp app_children(native_cluster: true), do: base_children()
+
+  defp base_children(), do: [Pistis.Core.Supervisor, Pistis.Cluster.Observer]
 
   defp topologies() do
     [
-      pistis: [strategy: Cluster.Strategy.Gossip]
+      pistis: [
+        strategy: Cluster.Strategy.Gossip
+      ]
     ]
   end
+
+  # def topologies() do
+  #   [
+  #     pistis: [
+  #       strategy: Cluster.Strategy.Epmd,
+  #       config: [
+  #         hosts: [
+  #           :"n1@127.0.0.1",
+  #           :"n2@127.0.0.1"
+  #         ]
+  #       ]
+  #     ]
+  #   ]
+  # end
 end
