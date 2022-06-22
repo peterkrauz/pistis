@@ -62,6 +62,8 @@ defmodule Pistis.Cluster.Manager do
 
   def erlang_nodes, do: [Node.self() | Node.list()]
 
+  def pistis_nodes(), do: pistis_nodes(as_raft: false)
+
   def pistis_nodes(as_raft: false) do
     erlang_nodes() |> Enum.filter(&is_pistis_replica/1)
   end
@@ -75,32 +77,23 @@ defmodule Pistis.Cluster.Manager do
   end
 
   def refresh_cluster_state() do
+    scribe("Refreshing cluster state...")
     {_, node_address} = leader_node()
-    {:ok, refreshed_members, _} = Raft.cluster_members(node_address)
+    {:ok, refreshed_members, leader} = Raft.cluster_members(node_address)
 
-    catalogued_failures = StateStorage.read().failures
+    current_state = StateStorage.read()
+    catalogued_failures = current_state.failures
     solved_failures = Enum.filter(catalogued_failures, fn f_node -> f_node in refreshed_members end)
     unsolved_failures = Enum.filter(catalogued_failures, fn f_node -> f_node not in refreshed_members end)
 
     new_members = Map.get(StateStorage.read(), :members) ++ solved_failures
 
-
-    scribe("Refreshing cluster state...")
-
-    scribe("Catalogued failures: ")
-    Enum.each(catalogued_failures, fn {_, address} -> IO.puts("\t #{Atom.to_string(address)}") end)
-
-    scribe("Solved failures: ")
-    Enum.each(solved_failures, fn {_, address} -> IO.puts("\t #{Atom.to_string(address)}") end)
-
-    scribe("Unsolved failures: ")
-    Enum.each(unsolved_failures, fn {_, address} -> IO.puts("\t #{Atom.to_string(address)}") end)
-
-    scribe("New members: ")
-    Enum.each(new_members, fn {_, address} -> IO.puts("\t #{Atom.to_string(address)}") end)
-
     StateStorage.store(members: new_members)
     StateStorage.store(failures: unsolved_failures)
+
+    unless current_state.leader == leader do
+      StateStorage.store(leader: leader)
+    end
   end
 
   def create_node(pod_index) do

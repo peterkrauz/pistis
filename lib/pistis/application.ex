@@ -20,25 +20,26 @@ defmodule Pistis.Application do
 
   defp base_children(), do: [Pistis.Core.Supervisor, Pistis.Cluster.Observer]
 
-  defp topologies() do
-    [
-      pistis: [
-        strategy: Cluster.Strategy.Gossip
-      ]
-    ]
-  end
-
-  # def topologies() do
+  # defp topologies() do
   #   [
   #     pistis: [
-  #       strategy: Cluster.Strategy.Epmd,
-  #       config: [
-  #         hosts: [
-  #           :"n1@127.0.0.1",
-  #           :"n2@127.0.0.1"
-  #         ]
-  #       ]
+  #       strategy: Cluster.Strategy.Gossip
   #     ]
   #   ]
   # end
+
+  def topologies() do
+    [
+      pistis: [
+        strategy: Cluster.Strategy.Epmd,
+        config: [
+          hosts: [
+            :"pistis_node_1@localhost",
+            :"pistis_node_2@localhost",
+            :"pistis_node_3@localhost",
+          ]
+        ]
+      ]
+    ]
+  end
 end

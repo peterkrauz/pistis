@@ -15,8 +15,6 @@ defmodule Pistis.Pod.Raft do
   end
 
   def start_raft_cluster(nodes) do
-    scribe("Starting Raft cluster with #{length(nodes)} members:")
-    Enum.each(nodes, fn n -> IO.puts("\t#{n}") end)
     :ra.start_cluster(:default, cluster_name(), MachineWrapper.machine_spec(), nodes)
     |> collect_raft_members()
   end

@@ -10,7 +10,6 @@ defmodule Pistis.Pod do
   end
 
   defp boot_pod(pod_index) do
-    scribe("Booting pod number #{pod_index}")
     pod_address = Manager.create_node(pod_index)
     Manager.wait()
 
@@ -21,7 +20,6 @@ defmodule Pistis.Pod do
 
   def boot_raft(pod_address) do
     :rpc.call(pod_address, Pistis.Pod, :start, [])
-    scribe("Booting raft on #{Raft.to_server_id(pod_address)}")
     Raft.to_server_id(pod_address)
   end
 end
