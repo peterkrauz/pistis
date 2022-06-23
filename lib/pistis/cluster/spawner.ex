@@ -1,16 +1,30 @@
-defmodule TestCluster do
-  def spawn(nodes) do
-    # Turn node into a distributed node with the given long name
-    :net_kernel.start([:"primary@127.0.0.1"])
+defmodule Pistis.Cluster.Spawner do
+  # Ref: https://github.com/phoenixframework/phoenix_pubsub/blob/ca2b47c8cf31324b0bf96cea862058f783a3e7bd/test/support/cluster.ex#L3
 
-    # Allow spawned nodes to fetch all code from this node
+  @cluster_size max(Application.get_env(:pistis, :cluster_size, 5), 5)
+
+  def spawn_nodes() do
+    toggle_distributed_if_necessary()
+    boot_erl_server()
+
+    build_local_addresses()
+    |> Enum.map(&Task.async(fn -> spawn_node(&1) end))
+    |> Enum.map(&Task.await(&1))
+  end
+
+  defp build_local_addresses() do
+    Range.new(1, @cluster_size) |> Enum.map(fn index -> "pistis_node_#{index}@127.0.0.1" end)
+  end
+
+  defp toggle_distributed_if_necessary() do
+    if Node.self() |> Atom.to_string() |> String.contains?("nonode") do
+      :net_kernel.start([:"primary@127.0.0.1"])
+    end
+  end
+
+  defp boot_erl_server() do
     :erl_boot_server.start([])
-    allow_boot to_charlist("127.0.0.1")
-
-    # :net_kernel.monitor_nodes(true)
-    # :os.cmd('epmd -daemon')
-
-    nodes |> Enum.map(&Task.async(fn -> spawn_node(&1) end))
+    to_charlist("127.0.0.1") |> allow_boot()
   end
 
   defp spawn_node(node_host) do
@@ -62,5 +76,3 @@ defmodule TestCluster do
     end
   end
 end
-
-ExUnit.start()

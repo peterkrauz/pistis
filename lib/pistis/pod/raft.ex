@@ -15,10 +15,6 @@ defmodule Pistis.Pod.Raft do
   end
 
   def start_raft_cluster(nodes) do
-    scribe("start_raft_cluster for #{length(nodes)}")
-    nodes |> Enum.map(fn n -> IO.puts("\t#{inspect(n)}") end)
-    :timer.sleep(5000)
-
     :ra.start_cluster(:default, cluster_name(), MachineWrapper.machine_spec(), nodes)
     |> collect_raft_members()
   end

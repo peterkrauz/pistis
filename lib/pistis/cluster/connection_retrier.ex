@@ -1,4 +1,4 @@
-defmodule Pistis.Cluster.ConnectionRetry do
+defmodule Pistis.Cluster.ConnectionRetrier do
   use GenServer
   use Pistis.Core.Journal
   alias Pistis.Cluster.State, as: ClusterState
@@ -26,13 +26,11 @@ defmodule Pistis.Cluster.ConnectionRetry do
 
   defp attempt_reconnection(%ClusterState{leader: _, failures: failures, members: _}) do
     scribe("#{length(failures)} failure(s) found:")
-    Enum.each(failures, fn {_, address} -> scribe("\t#{Atom.to_string(address)}\n") end)
-    # Enum.each(failures, fn failed_node -> Pistis.Pod.Raft.dynamic_add(failed_node) end)
+    Enum.each(failures, fn failed_node -> Pistis.Pod.Raft.dynamic_add(failed_node) end)
     schedule_work(@heartbeat)
   end
 
   defp schedule_work(delay) do
-    Pistis.Cluster.Manager.refresh_cluster_state()
     Process.send_after(self(), :work, delay)
   end
 end

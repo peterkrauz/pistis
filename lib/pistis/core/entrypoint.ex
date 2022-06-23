@@ -16,7 +16,8 @@ defmodule Pistis.Core.Entrypoint do
 
   def handle_info(:load_cluster, state) do
     Pistis.Cluster.Manager.boot()
-    Pistis.Cluster.ConnectionRetry.boot()
+    Pistis.Cluster.StateRefresher.boot()
+    Pistis.Cluster.ConnectionRetrier.boot()
     self_send(:stop)
     {:noreply, state}
   end

@@ -2,10 +2,8 @@ defmodule Pistis.Cluster.Manager do
   alias Pistis.Cluster.StateStorage
   alias Pistis.Pod
   alias Pistis.Pod.Raft
-  use Pistis.Core.Journal
 
   @known_hosts Application.get_env(:pistis, :known_hosts, [])
-  @cluster_size max(Application.get_env(:pistis, :cluster_size, 5), 3)
   @cluster_boot_delay max(Application.get_env(:pistis, :cluster_boot_delay, 4000), 4000)
 
   def boot() do
@@ -21,22 +19,12 @@ defmodule Pistis.Cluster.Manager do
 
   defp get_or_create_cluster() do
     case @known_hosts do
-      [] -> create_cluster()
+      [] -> Pistis.Cluster.Spawner.spawn_nodes()
       _ -> connect_to_cluster()
     end
   end
 
-  defp create_cluster() do
-    Range.new(1, @cluster_size)
-    |> Enum.map(&Pod.create_pod/1)
-    |> Enum.map(&Task.await/1)
-  end
-
   defp connect_to_cluster() do
-    scribe("Connecting to cluster...")
-    pistis_nodes() |> Enum.map(fn n -> IO.puts("\t#{inspect(n)}") end)
-    :timer.sleep(5000)
-
     pistis_nodes() |> Enum.map(&Pod.boot_raft/1)
   end
 
@@ -83,7 +71,6 @@ defmodule Pistis.Cluster.Manager do
   end
 
   def refresh_cluster_state() do
-    scribe("Refreshing cluster state...")
     {_, node_address} = leader_node()
     {:ok, refreshed_members, leader} = Raft.cluster_members(node_address)
 
@@ -100,15 +87,5 @@ defmodule Pistis.Cluster.Manager do
     unless current_state.leader == leader do
       StateStorage.store(leader: leader)
     end
-  end
-
-  def create_node(pod_index) do
-    pod_address = "#{Raft.cluster_name()}_node#{pod_index}_#{node_salt()}@localhost"
-    Task.async(fn -> System.shell("iex --sname #{pod_address} -S mix") end) # TODO: Find other way to boot stuff
-    String.to_atom(pod_address)
-  end
-
-  def node_salt() do
-    for _ <- 1..10, into: "", do: <<Enum.random('abcde12345')>>
   end
 end
