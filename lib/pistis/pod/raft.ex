@@ -43,6 +43,5 @@ defmodule Pistis.Pod.Raft do
       MachineWrapper.machine_spec(),
       [Manager.leader_node()]
     )
-    Manager.refresh_cluster_state()
   end
 end
