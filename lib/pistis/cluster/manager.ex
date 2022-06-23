@@ -33,8 +33,11 @@ defmodule Pistis.Cluster.Manager do
   end
 
   defp connect_to_cluster() do
-    pistis_nodes(as_raft: false)
-    |> Enum.map(&Pod.boot_raft/1)
+    scribe("Connecting to cluster...")
+    pistis_nodes() |> Enum.map(fn n -> IO.puts("\t#{inspect(n)}") end)
+    :timer.sleep(5000)
+
+    pistis_nodes() |> Enum.map(&Pod.boot_raft/1)
   end
 
   def wait(), do: :timer.sleep(@cluster_boot_delay)
@@ -60,17 +63,20 @@ defmodule Pistis.Cluster.Manager do
     end
   end
 
-  def erlang_nodes, do: [Node.self() | Node.list()]
-
   def pistis_nodes(), do: pistis_nodes(as_raft: false)
 
-  def pistis_nodes(as_raft: false) do
-    erlang_nodes() |> Enum.filter(&is_pistis_replica/1)
+  def pistis_nodes(as_raft: true) do
+    pistis_nodes() |> Enum.map(&Pistis.Pod.Raft.to_server_id/1)
   end
 
-  def pistis_nodes(as_raft: true) do
-    pistis_nodes(as_raft: false) |> Enum.map(&Pistis.Pod.Raft.to_server_id/1)
+  def pistis_nodes(as_raft: false) do
+    base_pistis_nodes = erlang_nodes() |> Enum.filter(&is_pistis_replica/1)
+    base_pistis_nodes ++ @known_hosts
+    |> MapSet.new()
+    |> MapSet.to_list()
   end
+
+  defp erlang_nodes, do: [Node.self() | Node.list()]
 
   def is_pistis_replica(node) do
     Atom.to_string(node) |> String.contains?("pistis")

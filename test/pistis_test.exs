@@ -1,10 +1,10 @@
 defmodule PistisTest do
   use ExUnit.Case
   alias Pistis.Cluster.Manager
-  alias Pistis.Machine.{Request, Response}
 
   test "basic kv store operations work" do
-    TestCluster.start_slaves()
+    Application.get_env(:pistis, :known_hosts, []) |> TestCluster.spawn()
+
     Manager.boot()
 
     CLI.put(:a, 3)
@@ -21,11 +21,11 @@ defmodule PistisTest do
     assert CLI.get(:c) == 3
     assert CLI.data() == [a: 1, b: 2, c: 3]
 
-    Enum.map(Manager.pistis_nodes(as_raft: false),  fn address -> :rpc.call(address, Node, :stop, []) end)
+    Enum.map(Manager.pistis_nodes(),  fn address -> :rpc.call(address, Node, :stop, []) end)
   end
 
   # test "" do
-  #   TestCluster.start_slaves()
+  #   TestCluster.boot_test_nodes()
   #   Manager.boot()
   #   pistis_nodes = Manager.pistis_nodes(as_raft: true)
   #   put_request = %Request{body: {:put, :e, 5}}
