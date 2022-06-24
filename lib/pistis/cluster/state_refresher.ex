@@ -18,7 +18,6 @@ defmodule Pistis.Cluster.StateRefresher do
   end
 
   def handle_info(:work, state) do
-    scribe("Refreshing cluster state...")
     refresh_cluster_state()
     schedule_work(@heartbeat)
     {:noreply, state}
