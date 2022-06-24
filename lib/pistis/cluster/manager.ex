@@ -10,28 +10,24 @@ defmodule Pistis.Cluster.Manager do
   @cluster_boot_delay max(Application.get_env(:pistis, :cluster_boot_delay, 4000), 4000)
 
   def boot() do
-    Cluster.setup_current_node()
+    Pistis.Core.Supervisor.supervise(Pistis.Cluster.StateStorage)
+    cluster = get_or_create_cluster()
+    wait()
 
-    if is_seed_node() do
-      scribe("Spawning cluster")
-      Pistis.Core.Supervisor.supervise(Pistis.Cluster.StateStorage)
-      cluster = get_or_create_cluster()
-      wait()
-
-      cluster
-      |> Raft.start_raft_cluster()
-      |> StateStorage.store()
-    end
+    cluster
+    |> Raft.start_raft_cluster()
+    |> StateStorage.store()
   end
 
-  defp is_seed_node() do
-    current_node_name = Cluster.node_name(Node.self())
-    seed_node_name = Cluster.node_name(Cluster.primary_node_name())
-    current_node_name == seed_node_name
-  end
+  # defp is_seed_node() do
+  #   current_node_name = Cluster.node_name(Node.self())
+  #   seed_node_name = Cluster.node_name(Cluster.primary_node_name())
+  #   current_node_name == seed_node_name
+  # end
 
   defp get_or_create_cluster() do
     if nodes_to_spawn_count() > 0 do
+      Cluster.setup_current_node()
       scribe("Spawning #{nodes_to_spawn_count()} additional nodes")
       Pistis.Cluster.Spawner.spawn_nodes(nodes_to_spawn_count())
       wait()

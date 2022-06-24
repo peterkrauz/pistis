@@ -18,7 +18,10 @@ defmodule Pistis.Server.RequestHandler do
 
   # See which if handle_cast yields faster throughput
   def handle_call({:send_request, request_body}, _from, state) do
-    result = :ra.process_command(Manager.any_node(), %Request{body: request_body})
-    {:reply, result, state}
+    response = :ra.process_command(Manager.any_node(), %Request{body: request_body})
+    {:reply, parse_raft_response(response), state}
   end
+
+  defp parse_raft_response({:ok, response, _}), do: response
+  defp parse_raft_response(anything_else), do: {:error, anything_else}
 end
