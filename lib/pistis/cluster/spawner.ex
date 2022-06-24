@@ -10,7 +10,7 @@ defmodule Pistis.Cluster.Spawner do
 
   defp toggle_distributed_if_necessary() do
     if Node.self() |> Atom.to_string() |> String.contains?("nonode") do
-      :net_kernel.start([:"primary@127.0.0.1"])
+      :net_kernel.start([:"server@localhost"])
     end
   end
 
@@ -25,7 +25,7 @@ defmodule Pistis.Cluster.Spawner do
   end
 
   defp build_local_addresses(node_count) do
-    Range.new(1, node_count) |> Enum.map(fn index -> :"pistis_node_#{index}@127.0.0.1" end)
+    Range.new(1, node_count) |> Enum.map(fn index -> :"pistis_node_#{index}@localhost" end)
   end
 
   defp spawn_node(node_host) do

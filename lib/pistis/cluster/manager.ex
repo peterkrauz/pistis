@@ -32,6 +32,7 @@ defmodule Pistis.Cluster.Manager do
   defp nodes_to_spawn_count(), do: @cluster_size - length(@known_hosts)
 
   defp connect_to_cluster() do
+    scribe("Connecting to Pistis pods")
     pistis_nodes() |> Enum.map(&Pod.boot_raft/1)
   end
 
@@ -61,7 +62,7 @@ defmodule Pistis.Cluster.Manager do
 
   def pistis_nodes(as_raft: false) do
     base_pistis_nodes = erlang_nodes() |> Enum.filter(&is_pistis_replica/1)
-    (@known_hosts ++ base_pistis_nodes)
+    (base_pistis_nodes ++ @known_hosts)
     |> MapSet.new()
     |> MapSet.to_list()
   end
