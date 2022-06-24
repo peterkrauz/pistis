@@ -1,4 +1,5 @@
 defmodule Pistis.Cluster.Manager do
+  alias Pistis.Cluster
   alias Pistis.Cluster.StateStorage
   alias Pistis.Pod
   alias Pistis.Pod.Raft
@@ -9,14 +10,24 @@ defmodule Pistis.Cluster.Manager do
   @cluster_boot_delay max(Application.get_env(:pistis, :cluster_boot_delay, 4000), 4000)
 
   def boot() do
-    Pistis.Core.Supervisor.supervise(Pistis.Cluster.StateStorage)
+    Cluster.setup_current_node()
 
-    cluster = get_or_create_cluster()
-    wait()
+    if is_seed_node() do
+      scribe("Spawning cluster")
+      Pistis.Core.Supervisor.supervise(Pistis.Cluster.StateStorage)
+      cluster = get_or_create_cluster()
+      wait()
 
-    cluster
-    |> Raft.start_raft_cluster()
-    |> StateStorage.store()
+      cluster
+      |> Raft.start_raft_cluster()
+      |> StateStorage.store()
+    end
+  end
+
+  defp is_seed_node() do
+    current_node_name = Cluster.node_name(Node.self())
+    seed_node_name = Cluster.node_name(Cluster.primary_node_name())
+    current_node_name == seed_node_name
   end
 
   defp get_or_create_cluster() do
@@ -36,7 +47,7 @@ defmodule Pistis.Cluster.Manager do
     pistis_nodes() |> Enum.map(&Pod.boot_raft/1)
   end
 
-  def wait(), do: :timer.sleep(@cluster_boot_delay)
+  defp wait(), do: :timer.sleep(@cluster_boot_delay)
 
   def leader_node() do
     case Pistis.Cluster.StateStorage.read() do
@@ -69,7 +80,7 @@ defmodule Pistis.Cluster.Manager do
 
   defp erlang_nodes, do: [Node.self() | Node.list()]
 
-  def is_pistis_replica(node_name) do
+  defp is_pistis_replica(node_name) do
     Atom.to_string(node_name) |> String.contains?("pistis_node")
   end
 end
