@@ -2,7 +2,7 @@
 
 An Elixir library to reduce the boilerplate work one would have in order to implement a distributed cluster of strongly-consistent BEAM instances.
 
-Pistis ensures deterministic commands through [`:ra`](https://github.com/rabbitmq/ra), an Erlang-based implementation of the [Raft](https://www.usenix.org/conference/atc14/technical-sessions/presentation/ongaro)consensus protocol.
+Pistis ensures deterministic commands through [`:ra`](https://github.com/rabbitmq/ra), an Erlang-based implementation of the [Raft](https://www.usenix.org/conference/atc14/technical-sessions/presentation/ongaro) consensus protocol.
 
 ## Installation
 
@@ -58,7 +58,7 @@ end
 2. A concrete state-machine
 
 ```elixir
-defmodule YourApp.StateMachine do
+defmodule YourApp.YourStateMachine do
   @behaviour Pistis.Machine
 
   def initial_state, do: 0
