@@ -4,7 +4,7 @@ defmodule Pistis.MixProject do
   def project do
     [
       app: :pistis,
-      version: "0.1.1",
+      version: "0.1.10",
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -26,6 +26,7 @@ defmodule Pistis.MixProject do
   defp deps do
     [
       {:ra, "~> 2.0"},
+      {:libcluster, "~> 3.3"},
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
     ]
   end

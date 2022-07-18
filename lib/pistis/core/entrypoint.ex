@@ -1,8 +1,11 @@
-defmodule Pistis.Cluster.Loader do
+defmodule Pistis.Core.Entrypoint do
   use GenServer
 
   @me __MODULE__
   @delay 2500
+
+  @spec start_link(any) :: :ignore | {:error, any} | {:ok, pid}
+  @spec init(any) :: {:ok, any}
 
   def start_link(args \\ []), do: GenServer.start_link(@me, args, name: @me)
 
@@ -12,8 +15,8 @@ defmodule Pistis.Cluster.Loader do
   end
 
   def handle_info(:load_cluster, state) do
-    Pistis.Cluster.Manager.start_cluster()
-    Pistis.Cluster.ConnectionRetry.start_link()
+    Pistis.Server.boot()
+    Pistis.Cluster.boot()
     self_send(:stop)
     {:noreply, state}
   end
